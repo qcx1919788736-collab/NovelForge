@@ -4,12 +4,14 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { FileSystemService } from './services/filesystem.js';
 import { KnowledgeBaseService } from './services/knowledge.js';
+import { WriterService } from './services/writer.js';
 import { ResponseFormat } from './constants.js';
 import * as schemas from './schemas/index.js';
 
 // 初始化服务
 const fsService = new FileSystemService();
 const kbService = new KnowledgeBaseService(fsService);
+const writerService = new WriterService();
 
 // 创建MCP服务器
 const server = new McpServer({
@@ -483,6 +485,202 @@ server.registerTool(
         content: [{
           type: "text",
           text: `读取文件失败: ${error instanceof Error ? error.message : String(error)}`
+        }]
+      };
+    }
+  }
+);
+
+// ========== 写入工具 ==========
+
+// 工具11: 写入文件（覆盖）
+server.registerTool(
+  "novel_write_file",
+  {
+    title: "写入文件",
+    description: "写入内容到知识库文件（覆盖原内容）。会自动备份原文件。",
+    inputSchema: schemas.WriteFileSchema,
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false
+    }
+  },
+  async ({ filePath, content, reason }) => {
+    try {
+      const result = await writerService.writeFile(filePath, content);
+
+      if (!result.success) {
+        return {
+          isError: true,
+          content: [{
+            type: "text",
+            text: `写入失败: ${result.error}`
+          }]
+        };
+      }
+
+      let response = `✓ 成功写入文件: ${filePath}\n`;
+      response += `原因: ${reason}\n`;
+      if (result.backupPath) {
+        response += `备份路径: ${result.backupPath}\n`;
+      }
+
+      return {
+        content: [{ type: "text", text: response }]
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{
+          type: "text",
+          text: `写入失败: ${error instanceof Error ? error.message : String(error)}`
+        }]
+      };
+    }
+  }
+);
+
+// 工具12: 追加内容到文件
+server.registerTool(
+  "novel_append_to_file",
+  {
+    title: "追加内容到文件",
+    description: "追加内容到知识库文件末尾。会自动备份原文件。",
+    inputSchema: schemas.AppendToFileSchema,
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false
+    }
+  },
+  async ({ filePath, content, reason }) => {
+    try {
+      const result = await writerService.appendToFile(filePath, content);
+
+      if (!result.success) {
+        return {
+          isError: true,
+          content: [{
+            type: "text",
+            text: `追加失败: ${result.error}`
+          }]
+        };
+      }
+
+      let response = `✓ 成功追加内容到文件: ${filePath}\n`;
+      response += `原因: ${reason}\n`;
+
+      return {
+        content: [{ type: "text", text: response }]
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{
+          type: "text",
+          text: `追加失败: ${error instanceof Error ? error.message : String(error)}`
+        }]
+      };
+    }
+  }
+);
+
+// 工具13: 更新文件中的特定部分
+server.registerTool(
+  "novel_update_section",
+  {
+    title: "更新文件部分内容",
+    description: "更新知识库文件中的特定部分（基于Markdown标题标记）。会自动备份原文件。",
+    inputSchema: schemas.UpdateSectionSchema,
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false
+    }
+  },
+  async ({ filePath, sectionMarker, newContent, reason }) => {
+    try {
+      const result = await writerService.updateSection(filePath, sectionMarker, newContent);
+
+      if (!result.success) {
+        return {
+          isError: true,
+          content: [{
+            type: "text",
+            text: `更新失败: ${result.error}`
+          }]
+        };
+      }
+
+      let response = `✓ 成功更新文件部分: ${filePath}\n`;
+      response += `部分标记: ${sectionMarker}\n`;
+      response += `原因: ${reason}\n`;
+
+      return {
+        content: [{ type: "text", text: response }]
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{
+          type: "text",
+          text: `更新失败: ${error instanceof Error ? error.message : String(error)}`
+        }]
+      };
+    }
+  }
+);
+
+// 工具14: 列出备份文件
+server.registerTool(
+  "novel_list_backups",
+  {
+    title: "列出备份文件",
+    description: "列出所有知识库文件的备份。",
+    inputSchema: schemas.ListBackupsSchema,
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
+    }
+  },
+  async ({ response_format }) => {
+    try {
+      const backups = await writerService.listBackups();
+
+      if (response_format === ResponseFormat.JSON) {
+        const output = { count: backups.length, backups };
+        return {
+          content: [{ type: "text", text: JSON.stringify(output, null, 2) }],
+          structuredContent: output
+        };
+      }
+
+      let markdown = `# 备份文件列表\n\n`;
+      markdown += `共 ${backups.length} 个备份\n\n`;
+
+      if (backups.length === 0) {
+        markdown += '暂无备份文件\n';
+      } else {
+        backups.forEach((backup, index) => {
+          markdown += `${index + 1}. ${backup}\n`;
+        });
+      }
+
+      return {
+        content: [{ type: "text", text: markdown }]
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{
+          type: "text",
+          text: `列出备份失败: ${error instanceof Error ? error.message : String(error)}`
         }]
       };
     }

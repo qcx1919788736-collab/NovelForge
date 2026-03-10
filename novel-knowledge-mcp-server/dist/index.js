@@ -370,6 +370,163 @@ var KnowledgeBaseService = class {
   }
 };
 
+// src/services/writer.ts
+import * as fs2 from "fs/promises";
+import * as path2 from "path";
+var WriterService = class {
+  kbBasePath;
+  backupDir;
+  constructor() {
+    this.kbBasePath = path2.resolve(process.cwd(), KNOWLEDGE_BASE_PATH);
+    this.backupDir = path2.resolve(process.cwd(), ".kb-backups");
+  }
+  /**
+   * 初始化备份目录
+   */
+  async ensureBackupDir() {
+    try {
+      await fs2.mkdir(this.backupDir, { recursive: true });
+    } catch (error) {
+      throw new Error(`\u65E0\u6CD5\u521B\u5EFA\u5907\u4EFD\u76EE\u5F55: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  /**
+   * 备份文件
+   */
+  async backupFile(relativePath) {
+    await this.ensureBackupDir();
+    const sourcePath = path2.join(this.kbBasePath, relativePath);
+    const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
+    const backupFileName = `${path2.basename(relativePath, ".md")}_${timestamp}.md`;
+    const backupPath = path2.join(this.backupDir, backupFileName);
+    try {
+      await fs2.access(sourcePath);
+      await fs2.copyFile(sourcePath, backupPath);
+      return backupPath;
+    } catch (error) {
+      return "";
+    }
+  }
+  /**
+   * 验证文件内容格式
+   */
+  validateContent(content, relativePath) {
+    if (!content || content.trim().length === 0) {
+      return { valid: false, error: "\u5185\u5BB9\u4E0D\u80FD\u4E3A\u7A7A" };
+    }
+    if (!relativePath.endsWith(".md")) {
+      return { valid: false, error: "\u53EA\u652F\u6301 Markdown \u6587\u4EF6" };
+    }
+    const fullPath = path2.join(this.kbBasePath, relativePath);
+    if (!fullPath.startsWith(this.kbBasePath)) {
+      return { valid: false, error: "\u8DEF\u5F84\u5FC5\u987B\u5728\u77E5\u8BC6\u5E93\u8303\u56F4\u5185" };
+    }
+    return { valid: true };
+  }
+  /**
+   * 写入文件（覆盖）
+   */
+  async writeFile(relativePath, content) {
+    const validation = this.validateContent(content, relativePath);
+    if (!validation.valid) {
+      return { success: false, error: validation.error };
+    }
+    const fullPath = path2.join(this.kbBasePath, relativePath);
+    try {
+      const backupPath = await this.backupFile(relativePath);
+      await fs2.mkdir(path2.dirname(fullPath), { recursive: true });
+      await fs2.writeFile(fullPath, content, "utf-8");
+      return { success: true, backupPath: backupPath || void 0 };
+    } catch (error) {
+      return {
+        success: false,
+        error: `\u5199\u5165\u5931\u8D25: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+  /**
+   * 追加内容到文件
+   */
+  async appendToFile(relativePath, content) {
+    const validation = this.validateContent(content, relativePath);
+    if (!validation.valid) {
+      return { success: false, error: validation.error };
+    }
+    const fullPath = path2.join(this.kbBasePath, relativePath);
+    try {
+      await this.backupFile(relativePath);
+      await fs2.appendFile(fullPath, "\n" + content, "utf-8");
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: `\u8FFD\u52A0\u5931\u8D25: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+  /**
+   * 更新文件中的特定部分（基于标记）
+   */
+  async updateSection(relativePath, sectionMarker, newContent) {
+    const fullPath = path2.join(this.kbBasePath, relativePath);
+    try {
+      await this.backupFile(relativePath);
+      const originalContent = await fs2.readFile(fullPath, "utf-8");
+      const lines = originalContent.split("\n");
+      const sectionIndex = lines.findIndex((line) => line.trim() === sectionMarker);
+      if (sectionIndex === -1) {
+        return { success: false, error: `\u672A\u627E\u5230\u6807\u8BB0: ${sectionMarker}` };
+      }
+      const sectionLevel = (sectionMarker.match(/^#+/) || [""])[0].length;
+      let endIndex = lines.length;
+      for (let i = sectionIndex + 1; i < lines.length; i++) {
+        const match = lines[i].match(/^#+/);
+        if (match && match[0].length <= sectionLevel) {
+          endIndex = i;
+          break;
+        }
+      }
+      const before = lines.slice(0, sectionIndex + 1);
+      const after = lines.slice(endIndex);
+      const updated = [...before, "", newContent, "", ...after].join("\n");
+      await fs2.writeFile(fullPath, updated, "utf-8");
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: `\u66F4\u65B0\u5931\u8D25: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+  /**
+   * 回滚到备份
+   */
+  async rollback(backupPath, targetPath) {
+    try {
+      const fullTargetPath = path2.join(this.kbBasePath, targetPath);
+      await fs2.copyFile(backupPath, fullTargetPath);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: `\u56DE\u6EDA\u5931\u8D25: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+  /**
+   * 列出所有备份
+   */
+  async listBackups() {
+    try {
+      await this.ensureBackupDir();
+      const files = await fs2.readdir(this.backupDir);
+      return files.filter((f) => f.endsWith(".md")).sort().reverse();
+    } catch (error) {
+      return [];
+    }
+  }
+};
+
 // src/schemas/index.ts
 import { z } from "zod";
 var SearchKnowledgeBaseSchema = z.object({
@@ -413,10 +570,30 @@ var ReadFileSchema = z.object({
   filePath: z.string().min(1, "\u6587\u4EF6\u8DEF\u5F84\u4E0D\u80FD\u4E3A\u7A7A").describe("\u76F8\u5BF9\u4E8E\u77E5\u8BC6\u5E93\u6839\u76EE\u5F55\u7684\u6587\u4EF6\u8DEF\u5F84"),
   response_format: z.nativeEnum(ResponseFormat).default("markdown" /* MARKDOWN */).describe("\u54CD\u5E94\u683C\u5F0F\uFF1Ajson\u6216markdown")
 });
+var WriteFileSchema = z.object({
+  filePath: z.string().min(1, "\u6587\u4EF6\u8DEF\u5F84\u4E0D\u80FD\u4E3A\u7A7A").describe("\u76F8\u5BF9\u4E8E\u77E5\u8BC6\u5E93\u6839\u76EE\u5F55\u7684\u6587\u4EF6\u8DEF\u5F84\uFF08\u5982\uFF1A00_\u6838\u5FC3\u4E0A\u4E0B\u6587/\u5F53\u524D\u72B6\u6001.md\uFF09"),
+  content: z.string().min(1, "\u5185\u5BB9\u4E0D\u80FD\u4E3A\u7A7A").describe("\u8981\u5199\u5165\u7684\u5B8C\u6574\u5185\u5BB9\uFF08Markdown\u683C\u5F0F\uFF09"),
+  reason: z.string().min(5, "\u539F\u56E0\u8BF4\u660E\u81F3\u5C115\u4E2A\u5B57\u7B26").describe("\u5199\u5165\u539F\u56E0\u8BF4\u660E\uFF08\u7528\u4E8E\u65E5\u5FD7\u8BB0\u5F55\uFF09")
+});
+var AppendToFileSchema = z.object({
+  filePath: z.string().min(1, "\u6587\u4EF6\u8DEF\u5F84\u4E0D\u80FD\u4E3A\u7A7A").describe("\u76F8\u5BF9\u4E8E\u77E5\u8BC6\u5E93\u6839\u76EE\u5F55\u7684\u6587\u4EF6\u8DEF\u5F84"),
+  content: z.string().min(1, "\u5185\u5BB9\u4E0D\u80FD\u4E3A\u7A7A").describe("\u8981\u8FFD\u52A0\u7684\u5185\u5BB9\uFF08Markdown\u683C\u5F0F\uFF09"),
+  reason: z.string().min(5, "\u539F\u56E0\u8BF4\u660E\u81F3\u5C115\u4E2A\u5B57\u7B26").describe("\u8FFD\u52A0\u539F\u56E0\u8BF4\u660E\uFF08\u7528\u4E8E\u65E5\u5FD7\u8BB0\u5F55\uFF09")
+});
+var UpdateSectionSchema = z.object({
+  filePath: z.string().min(1, "\u6587\u4EF6\u8DEF\u5F84\u4E0D\u80FD\u4E3A\u7A7A").describe("\u76F8\u5BF9\u4E8E\u77E5\u8BC6\u5E93\u6839\u76EE\u5F55\u7684\u6587\u4EF6\u8DEF\u5F84"),
+  sectionMarker: z.string().min(1, "\u90E8\u5206\u6807\u8BB0\u4E0D\u80FD\u4E3A\u7A7A").describe("\u8981\u66F4\u65B0\u7684\u90E8\u5206\u6807\u8BB0\uFF08Markdown\u6807\u9898\uFF0C\u5982\uFF1A## \u5F53\u524D\u72B6\u6001\uFF09"),
+  newContent: z.string().min(1, "\u65B0\u5185\u5BB9\u4E0D\u80FD\u4E3A\u7A7A").describe("\u65B0\u7684\u5185\u5BB9\uFF08Markdown\u683C\u5F0F\uFF09"),
+  reason: z.string().min(5, "\u539F\u56E0\u8BF4\u660E\u81F3\u5C115\u4E2A\u5B57\u7B26").describe("\u66F4\u65B0\u539F\u56E0\u8BF4\u660E\uFF08\u7528\u4E8E\u65E5\u5FD7\u8BB0\u5F55\uFF09")
+});
+var ListBackupsSchema = z.object({
+  response_format: z.nativeEnum(ResponseFormat).default("markdown" /* MARKDOWN */).describe("\u54CD\u5E94\u683C\u5F0F\uFF1Ajson\u6216markdown")
+});
 
 // src/index.ts
 var fsService = new FileSystemService();
 var kbService = new KnowledgeBaseService(fsService);
+var writerService = new WriterService();
 var server = new McpServer({
   name: "novel-knowledge-mcp-server",
   version: "1.0.0"
@@ -881,6 +1058,192 @@ server.registerTool(
         content: [{
           type: "text",
           text: `\u8BFB\u53D6\u6587\u4EF6\u5931\u8D25: ${error instanceof Error ? error.message : String(error)}`
+        }]
+      };
+    }
+  }
+);
+server.registerTool(
+  "novel_write_file",
+  {
+    title: "\u5199\u5165\u6587\u4EF6",
+    description: "\u5199\u5165\u5185\u5BB9\u5230\u77E5\u8BC6\u5E93\u6587\u4EF6\uFF08\u8986\u76D6\u539F\u5185\u5BB9\uFF09\u3002\u4F1A\u81EA\u52A8\u5907\u4EFD\u539F\u6587\u4EF6\u3002",
+    inputSchema: WriteFileSchema,
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false
+    }
+  },
+  async ({ filePath, content, reason }) => {
+    try {
+      const result = await writerService.writeFile(filePath, content);
+      if (!result.success) {
+        return {
+          isError: true,
+          content: [{
+            type: "text",
+            text: `\u5199\u5165\u5931\u8D25: ${result.error}`
+          }]
+        };
+      }
+      let response = `\u2713 \u6210\u529F\u5199\u5165\u6587\u4EF6: ${filePath}
+`;
+      response += `\u539F\u56E0: ${reason}
+`;
+      if (result.backupPath) {
+        response += `\u5907\u4EFD\u8DEF\u5F84: ${result.backupPath}
+`;
+      }
+      return {
+        content: [{ type: "text", text: response }]
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{
+          type: "text",
+          text: `\u5199\u5165\u5931\u8D25: ${error instanceof Error ? error.message : String(error)}`
+        }]
+      };
+    }
+  }
+);
+server.registerTool(
+  "novel_append_to_file",
+  {
+    title: "\u8FFD\u52A0\u5185\u5BB9\u5230\u6587\u4EF6",
+    description: "\u8FFD\u52A0\u5185\u5BB9\u5230\u77E5\u8BC6\u5E93\u6587\u4EF6\u672B\u5C3E\u3002\u4F1A\u81EA\u52A8\u5907\u4EFD\u539F\u6587\u4EF6\u3002",
+    inputSchema: AppendToFileSchema,
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false
+    }
+  },
+  async ({ filePath, content, reason }) => {
+    try {
+      const result = await writerService.appendToFile(filePath, content);
+      if (!result.success) {
+        return {
+          isError: true,
+          content: [{
+            type: "text",
+            text: `\u8FFD\u52A0\u5931\u8D25: ${result.error}`
+          }]
+        };
+      }
+      let response = `\u2713 \u6210\u529F\u8FFD\u52A0\u5185\u5BB9\u5230\u6587\u4EF6: ${filePath}
+`;
+      response += `\u539F\u56E0: ${reason}
+`;
+      return {
+        content: [{ type: "text", text: response }]
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{
+          type: "text",
+          text: `\u8FFD\u52A0\u5931\u8D25: ${error instanceof Error ? error.message : String(error)}`
+        }]
+      };
+    }
+  }
+);
+server.registerTool(
+  "novel_update_section",
+  {
+    title: "\u66F4\u65B0\u6587\u4EF6\u90E8\u5206\u5185\u5BB9",
+    description: "\u66F4\u65B0\u77E5\u8BC6\u5E93\u6587\u4EF6\u4E2D\u7684\u7279\u5B9A\u90E8\u5206\uFF08\u57FA\u4E8EMarkdown\u6807\u9898\u6807\u8BB0\uFF09\u3002\u4F1A\u81EA\u52A8\u5907\u4EFD\u539F\u6587\u4EF6\u3002",
+    inputSchema: UpdateSectionSchema,
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false
+    }
+  },
+  async ({ filePath, sectionMarker, newContent, reason }) => {
+    try {
+      const result = await writerService.updateSection(filePath, sectionMarker, newContent);
+      if (!result.success) {
+        return {
+          isError: true,
+          content: [{
+            type: "text",
+            text: `\u66F4\u65B0\u5931\u8D25: ${result.error}`
+          }]
+        };
+      }
+      let response = `\u2713 \u6210\u529F\u66F4\u65B0\u6587\u4EF6\u90E8\u5206: ${filePath}
+`;
+      response += `\u90E8\u5206\u6807\u8BB0: ${sectionMarker}
+`;
+      response += `\u539F\u56E0: ${reason}
+`;
+      return {
+        content: [{ type: "text", text: response }]
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{
+          type: "text",
+          text: `\u66F4\u65B0\u5931\u8D25: ${error instanceof Error ? error.message : String(error)}`
+        }]
+      };
+    }
+  }
+);
+server.registerTool(
+  "novel_list_backups",
+  {
+    title: "\u5217\u51FA\u5907\u4EFD\u6587\u4EF6",
+    description: "\u5217\u51FA\u6240\u6709\u77E5\u8BC6\u5E93\u6587\u4EF6\u7684\u5907\u4EFD\u3002",
+    inputSchema: ListBackupsSchema,
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false
+    }
+  },
+  async ({ response_format }) => {
+    try {
+      const backups = await writerService.listBackups();
+      if (response_format === "json" /* JSON */) {
+        const output = { count: backups.length, backups };
+        return {
+          content: [{ type: "text", text: JSON.stringify(output, null, 2) }],
+          structuredContent: output
+        };
+      }
+      let markdown = `# \u5907\u4EFD\u6587\u4EF6\u5217\u8868
+
+`;
+      markdown += `\u5171 ${backups.length} \u4E2A\u5907\u4EFD
+
+`;
+      if (backups.length === 0) {
+        markdown += "\u6682\u65E0\u5907\u4EFD\u6587\u4EF6\n";
+      } else {
+        backups.forEach((backup, index) => {
+          markdown += `${index + 1}. ${backup}
+`;
+        });
+      }
+      return {
+        content: [{ type: "text", text: markdown }]
+      };
+    } catch (error) {
+      return {
+        isError: true,
+        content: [{
+          type: "text",
+          text: `\u5217\u51FA\u5907\u4EFD\u5931\u8D25: ${error instanceof Error ? error.message : String(error)}`
         }]
       };
     }

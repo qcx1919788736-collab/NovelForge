@@ -112,3 +112,54 @@ export const ReadFileSchema = z.object({
     .default(ResponseFormat.MARKDOWN)
     .describe("响应格式：json或markdown")
 });
+
+// ========== 写入工具 Schema ==========
+
+// 写入文件（覆盖）
+export const WriteFileSchema = z.object({
+  filePath: z.string()
+    .min(1, "文件路径不能为空")
+    .describe("相对于知识库根目录的文件路径（如：00_核心上下文/当前状态.md）"),
+  content: z.string()
+    .min(1, "内容不能为空")
+    .describe("要写入的完整内容（Markdown格式）"),
+  reason: z.string()
+    .min(5, "原因说明至少5个字符")
+    .describe("写入原因说明（用于日志记录）")
+});
+
+// 追加内容到文件
+export const AppendToFileSchema = z.object({
+  filePath: z.string()
+    .min(1, "文件路径不能为空")
+    .describe("相对于知识库根目录的文件路径"),
+  content: z.string()
+    .min(1, "内容不能为空")
+    .describe("要追加的内容（Markdown格式）"),
+  reason: z.string()
+    .min(5, "原因说明至少5个字符")
+    .describe("追加原因说明（用于日志记录）")
+});
+
+// 更新文件中的特定部分
+export const UpdateSectionSchema = z.object({
+  filePath: z.string()
+    .min(1, "文件路径不能为空")
+    .describe("相对于知识库根目录的文件路径"),
+  sectionMarker: z.string()
+    .min(1, "部分标记不能为空")
+    .describe("要更新的部分标记（Markdown标题，如：## 当前状态）"),
+  newContent: z.string()
+    .min(1, "新内容不能为空")
+    .describe("新的内容（Markdown格式）"),
+  reason: z.string()
+    .min(5, "原因说明至少5个字符")
+    .describe("更新原因说明（用于日志记录）")
+});
+
+// 列出备份文件
+export const ListBackupsSchema = z.object({
+  response_format: z.nativeEnum(ResponseFormat)
+    .default(ResponseFormat.MARKDOWN)
+    .describe("响应格式：json或markdown")
+});
