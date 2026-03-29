@@ -199,6 +199,7 @@ node tools/novel-cli.js update-kb 5
 - [导入现有作品](docs/03-导入现有作品.md)
 - [工作流详解](docs/04-工作流详解.md)
 - [自定义与扩展](docs/05-自定义与扩展.md)
+- [Cherry Studio 使用指南](docs/06-Cherry-Studio-Guide.md)
 
 ## 适用场景
 
