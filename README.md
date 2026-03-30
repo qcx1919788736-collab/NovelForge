@@ -248,7 +248,7 @@ Craft Companion 提供 MCP（Model Context Protocol）服务器，可在 Claude 
   "mcpServers": {
     "novel-knowledge": {
       "command": "node",
-      "args": ["path/to/craft-companion/novel-knowledge-mcp-server/build/index.js"],
+      "args": ["path/to/craft-companion/novel-knowledge-mcp-server/dist/index.js"],
       "env": {
         "KNOWLEDGE_BASE_PATH": "path/to/你的项目/知识库"
       }
