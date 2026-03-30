@@ -19,8 +19,6 @@ Craft Companion 是一个基于结构化知识库的 AI 协作创作框架，专
 
 ## 快速开始
 
-> **推荐使用 Cherry Studio** — 图形界面，无需命令行，开箱即用 → [Cherry Studio 完整使用指南](docs/06-Cherry-Studio使用指南.md)
-
 ### 1. 获取项目
 
 ```bash
@@ -42,46 +40,22 @@ Cherry Studio 是一个跨平台的 AI 桌面客户端，支持多个 LLM 提供
 
 ---
 
-### 3. 在 Cherry Studio 中使用
+### 3. 在 Cherry Studio 中使用（推荐）
 
-#### 第一种（强推！）
+**三步开始**：
 
-**步骤**：
+1. **配置 API** — 打开 Cherry Studio，添加你的 Claude / GPT API
+2. **创建 Agent** — 新建 Agent，设置工作目录为 `craft-companion` 项目目录
+3. **开始创作** — 输入"请帮我创作第1章"
 
-1. **打开 Cherry Studio**，配置你的 API（Claude / GPT / 其他）
+就这么简单。AI 会自动读取 `CLAUDE.md` 和知识库，执行完整工作流：
+- 📖 读取知识库（人物、设定、文风规则）
+- 📝 生成 3 个章纲版本供你选择
+- ✍️ 根据选定章纲写完整章节（6000-10000字）
+- 🔍 自查并修正常见问题
+- 💾 更新知识库
 
-2. **创建 Agent**
-
-   - 新建 Agent，命名随意
-   - 系统提示词：（可不设置，设置工作目录后，AI会自动读取CLAUDE.md和知识库内容）
-   - 工作目录选择先前克隆的整个库，目录名默认是`craft-companion` 
-   - 设置工作目录后，AI会自动读取CLAUDE.md和知识库内容，无需额外导入文件。
-   - 权限模式熟悉后建议全自动模式
-   - 工具等cherry内置有bash Edit Glob等工具来操作文件，其余可自行设置搜索工具等
-
-3. **开始创作**
-
-   - 点击会话
-
-   - 可自由输入，自然语言交互。
-
-     （也可以用助手搭配cherry知识库的形式）
-     
-#### 第二种（非常不建议！！！）
-**助手模式**
-使用cherry知识库，将项目目录导入，但是要自行接入嵌入模型对应api，较为繁琐。
-而且该项目采用按需全加载策略，这种方式会损失精度，甚至丧失该项目作用。
-
-AI 会自动执行完整工作流：
-1. 📖 读取知识库（人物、设定、文风规则）
-2. 📝 生成 3 个章纲版本供你选择
-3. ✍️ 根据选定章纲写完整章节（6000-10000字）
-4. 🔍 自查并修正常见问题
-5. 💾 更新知识库
-
-> **首次使用提示**：如果知识库为空，AI 会引导你先完成基础设定（主角信息、世界观、文风偏好）。
-
-**详细配置说明** → [Cherry Studio 使用指南](docs/06-Cherry-Studio使用指南.md)
+> **提示**：权限模式建议选"全自动"；首次使用时 AI 会引导你完成基础设定
 
 ---
 
@@ -145,14 +119,11 @@ node tools/import.js --project ./我的小说 --file 我的章节.txt
 A: 正常现象。AI 会引导你先完成基础设定。你也可以手动编辑 `知识库/` 目录下的文件。
 
 **Q: Cherry Studio 找不到知识库文件？**
-A: 确保导入了整个 `craft-companion` 目录，或手动将 `知识库/` 目录导入到 Cherry Studio 知识库中。
+A: 确保在 Agent 设置中正确指定了工作目录为 `craft-companion` 项目根目录。
 
 **Q: 可以用其他 AI 工具吗？**
 A: 可以。任何支持 CLAUDE.md 或能读取知识库文件的 AI 工具都可以使用（Claude Code、Cursor、Windsurf 等）。
 
----
-
-**准备好了吗？** → 查看 [Cherry Studio 完整使用指南](docs/06-Cherry-Studio使用指南.md)
 
 ## 项目结构
 
@@ -295,7 +266,7 @@ node tools/novel-cli.js new-chapter 5
 - [导入现有作品](docs/03-导入现有作品.md)
 - [工作流详解](docs/04-工作流详解.md)
 - [自定义与扩展](docs/05-自定义与扩展.md)
-- [Cherry Studio 使用指南](docs/06-Cherry-Studio-Guide.md)
+- [Cherry Studio MCP 配置（可选）](docs/06-Cherry-Studio使用指南.md)
 
 ## 适用场景
 
