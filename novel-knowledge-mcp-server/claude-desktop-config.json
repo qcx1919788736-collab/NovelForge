@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "novel-knowledge": {
+      "command": "node",
+      "args": [
+        "C:/Users/QCX19/Desktop/小说/正文创作/novel-knowledge-mcp-server/dist/index.js"
+      ],
+      "env": {}
+    }
+  }
+}
