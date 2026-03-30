@@ -30,28 +30,45 @@ node --version  # 应该显示 v18.0.0 或更高
 
 ---
 
-### 1. 安装 NovelForge
+### 1. 安装
+
+**方式 A：通过 npm 安装（推荐）**
+
+```bash
+npm install -g craft-companion
+```
+
+安装后可直接使用：
+```bash
+craft-companion init
+# 或使用简短命令
+cc-init
+```
+
+**方式 B：从源码安装**
 
 ```bash
 # 克隆仓库
 git clone https://github.com/qcx1919788736-collab/NovelForge.git
 cd NovelForge
+npm install -g .
 ```
-
-> **提示**：NovelForge 工具使用 Node.js 内置模块，无需运行 npm install。
 
 ---
 
 ### 2. 创建你的第一个项目
 
 ```bash
-# 运行初始化脚本
-node tools/init.js
+# 使用 craft-companion 命令
+craft-companion init
+
+# 或使用简短命令
+cc-init
 ```
 
 按提示输入项目信息：
 ```
-=== NovelForge 项目初始化 ===
+=== Craft Companion 项目初始化 ===
 
 项目名称: 我的小说
 作者: 张三
@@ -97,8 +114,10 @@ AI 会自动执行完整工作流：
 如果你已经写了部分章节，可以导入现有内容：
 
 ```bash
-# 确保在 NovelForge 根目录
-node tools/import-cli.js --project ./我的小说 --file 我的章节.txt
+craft-companion import --project ./我的小说 --file 我的章节.txt
+
+# 或使用简短命令
+cc-import --project ./我的小说 --file 我的章节.txt
 ```
 
 导入工具会自动分析并提取：
@@ -114,19 +133,17 @@ node tools/import-cli.js --project ./我的小说 --file 我的章节.txt
 
 ### 5. 使用 CLI 工具
 
-在项目目录内使用工具时，需要引用上级目录：
-
 ```bash
 cd 我的小说
 
 # 创建新章节工作文件
-node ../tools/novel-cli.js new-chapter 2
+craft-companion new-chapter 2
 
 # 验证知识库完整性
-node ../tools/novel-cli.js check
+craft-companion check
 
 # 归档已完成章节
-node ../tools/novel-cli.js archive 1
+craft-companion archive 1
 ```
 
 ---
@@ -136,11 +153,8 @@ node ../tools/novel-cli.js archive 1
 **Q: 首次创作时 AI 说知识库为空？**
 A: 正常现象。AI 会引导你先完成基础设定。你也可以手动编辑 `知识库/` 目录下的文件。
 
-**Q: `node tools/init.js` 找不到文件？**
-A: 确保你在 NovelForge 根目录下运行命令。运行 `pwd` 检查当前路径。
-
-**Q: 如何在项目目录内使用 CLI 工具？**
-A: 工具在上级目录，使用相对路径：`node ../tools/novel-cli.js`
+**Q: `craft-companion` 命令找不到？**
+A: 确保已全局安装：`npm install -g craft-companion`，或从源码安装：`npm install -g .`
 
 **Q: Claude Code 不识别 CLAUDE.md？**
 A: 确保使用最新版 Claude Code，或尝试其他支持 CLAUDE.md 的工具（Cursor、Windsurf）。

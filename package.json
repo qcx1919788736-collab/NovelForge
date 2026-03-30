@@ -1,0 +1,33 @@
+{
+  "name": "craft-companion",
+  "version": "1.0.0",
+  "description": "AI 协作创作框架 — 基于结构化知识库的 AI 创作伙伴",
+  "main": "index.js",
+  "bin": {
+    "craft-companion": "./bin/craft-companion.js",
+    "cc-init": "./tools/init.js",
+    "cc-import": "./tools/import-cli.js",
+    "cc-cli": "./tools/novel-cli.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ai",
+    "writing",
+    "creative",
+    "assistant",
+    "knowledge-base",
+    "claude"
+  ],
+  "author": "qcx1919788736-collab",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qcx1919788736-collab/NovelForge.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "preferGlobal": true
+}
