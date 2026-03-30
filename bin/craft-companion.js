@@ -48,7 +48,12 @@ if (!scriptPath) {
   process.exit(1);
 }
 
-const child = spawn('node', [scriptPath, command, ...args], {
+// 对于 novel-cli.js，需要传递命令和参数
+const scriptArgs = scriptPath.includes('novel-cli.js')
+  ? [scriptPath, command, ...args]
+  : [scriptPath, ...args];
+
+const child = spawn('node', scriptArgs, {
   stdio: 'inherit'
 });
 
