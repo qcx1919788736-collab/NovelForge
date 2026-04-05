@@ -1,21 +1,27 @@
 # 依赖
 node_modules/
 
-# 用户的实际知识库内容（只保留template）
+# 用户知识库和创作内容（按需创建，勿上传）
 知识库/
 工作区/
 _归档/
-
-# 知识库备份和更新日志
 .kb-backups/
 .kb-update-logs/
+.ai-records/
 
-# 编辑器配置
-.obsidian/
+# 临时文件
+*.tmp
+*.bak
+.cache/
+*.log
+
+# 个人配置文件
+claude_mcp_config.json
+
+# 编辑器
 .vscode/
 .idea/
 *.swp
-*.swo
 *~
 
 # 系统文件
@@ -26,16 +32,4 @@ desktop.ini
 # 环境变量
 .env
 .env.local
-
-# 日志
-*.log
-npm-debug.log*
-
-# 构建产物
-dist/
-build/
-
-# 临时文件
-*.tmp
-*.bak
-.cache/
+.env.*.local
