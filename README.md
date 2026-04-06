@@ -1,14 +1,20 @@
+<div align="center">
+
 # Craft Companion
 
-**让 AI 真正理解你的小说，而不是每章都重新猜。**
+### 让 AI 真正理解你的小说，而不是每章都重新猜。
 
-AI 协作小说创作框架 · **结构化知识库 + 双入口初始化 + 5阶段工作流**
+**AI 协作小说创作框架**
+
+结构化知识库 ✦ 双入口初始化 ✦ 5 阶段工作流
 
 ![Version](https://img.shields.io/badge/version-1.1.1-8b5cf6?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-14b8a6?style=flat-square)
 ![Local First](https://img.shields.io/badge/local--first-yes-f97316?style=flat-square)
 ![Dual Entry](https://img.shields.io/badge/onboarding-dual--entry-ec4899?style=flat-square)
 ![Workflow](https://img.shields.io/badge/workflow-5--stage-3b82f6?style=flat-square)
+
+</div>
 
 ---
 
