@@ -1,6 +1,6 @@
 {
   "name": "craft-companion",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "AI 协作创作框架 — 基于结构化知识库的 AI 创作伙伴",
   "main": "index.js",
   "bin": {
